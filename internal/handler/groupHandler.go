@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kamva/mgm/v3"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type GroupHandler struct {
@@ -48,5 +49,27 @@ func (h *GroupHandler) CreateGroup(c fuego.ContextWithBody[CreateGroupRequest]) 
 	}
 
 	h.logger.Debugf("Created group with ID %s", group.ID)
+	return &group, nil
+}
+
+func (h *GroupHandler) GetGroupFromID(c fuego.ContextNoBody) (*entity.Group, error) {
+	var group entity.Group
+
+	id := c.PathParam("id")
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		h.logger.Errorf("Error parsing group ID %s: %v", id, err)
+		return &group, fuego.BadRequestError{Title: "Invalid group ID", Err: err}
+	}
+
+	h.logger.Debugf("Fetching group with ID %s", id)
+	filter := bson.M{"id": uuid}
+	err = h.mongoCollection.First(filter, &group)
+	if err != nil {
+		h.logger.Errorf("Error fetching group with ID %s: %v", id, err)
+		return &group, fuego.NotFoundError{Title: "Group not found", Err: err}
+	}
+
+	h.logger.Debugf("Fetched group with ID %s", id)
 	return &group, nil
 }
