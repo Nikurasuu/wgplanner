@@ -104,7 +104,6 @@ func (h *GroupHandler) AddMemberToGroup(c fuego.ContextWithBody[AddMemberRequest
 
 	var member entity.Member
 	member.ID = uuid.New()
-	member.GroupID = group.ID
 	member.Name = body.Name
 	member.CreatedAt = time.Now()
 	member.UpdatedAt = time.Now()

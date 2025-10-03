@@ -8,6 +8,5 @@ import (
 type Member struct {
 	mgm.DefaultModel `bson:",inline"`
 	ID               uuid.UUID `json:"id" bson:"id"`
-	GroupID          uuid.UUID `json:"group_id" bson:"group_id"`
 	Name             string    `json:"name" bson:"name"`
 }
