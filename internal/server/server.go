@@ -28,8 +28,6 @@ func NewServer(cfg *config.Config, logger *logrus.Logger) *Server {
 func (s *Server) Run() error {
 	s.logger.Infof("Starting server on port %d", s.cfg.Server.Port)
 
-	groupCollection := mgm.Coll(&entity.Group{})
-
 	srv := fuego.NewServer(
 		fuego.WithAddr("localhost:" + strconv.Itoa(s.cfg.Server.Port)),
 	)
@@ -38,8 +36,8 @@ func (s *Server) Run() error {
 		option.Tags("API"),
 	)
 
+	groupCollection := mgm.Coll(&entity.Group{})
 	groupHandler := handler.NewGroupHandler(s.logger, groupCollection)
-
 	addGroupRoutes(api, groupHandler)
 
 	return srv.Run()

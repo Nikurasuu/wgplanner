@@ -13,11 +13,15 @@ func addGroupRoutes(api *fuego.Server, groupHandler *handler.GroupHandler) {
 	)
 
 	fuego.Post(groups, "", groupHandler.CreateGroup,
-		option.Tags("Create"),
 		option.Summary("Create a new group"),
 	)
-	fuego.Get(groups, "/{id...}", groupHandler.GetGroupFromID,
-		option.Tags("Get"),
+
+	group := fuego.Group(groups, "/{groupId}")
+
+	fuego.Get(group, "", groupHandler.GetGroupFromID,
 		option.Summary("Get a group by ID"),
+	)
+	fuego.Post(group, "/members", groupHandler.AddMemberToGroup,
+		option.Summary("Add a new member to the group"),
 	)
 }

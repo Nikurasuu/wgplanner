@@ -5,9 +5,9 @@ import (
 	"github.com/kamva/mgm/v3"
 )
 
-type Group struct {
+type Member struct {
 	mgm.DefaultModel `bson:",inline"`
-	ID               uuid.UUID `json:"id" bson:"id,omitempty"`
+	ID               uuid.UUID `json:"id" bson:"id"`
+	GroupID          uuid.UUID `json:"group_id" bson:"group_id"`
 	Name             string    `json:"name" bson:"name"`
-	Members          []Member  `json:"members" bson:"members"`
 }
