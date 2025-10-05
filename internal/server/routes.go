@@ -24,4 +24,7 @@ func addGroupRoutes(api *fuego.Server, groupHandler *handler.GroupHandler) {
 	fuego.Post(group, "/members", groupHandler.AddMemberToGroup,
 		option.Summary("Add a new member to the group"),
 	)
+	fuego.Delete(group, "/members/{memberId}", groupHandler.RemoveMembersFromGroup,
+		option.Summary("Remove members from the group"),
+	)
 }

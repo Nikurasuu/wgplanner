@@ -121,3 +121,53 @@ func (h *GroupHandler) AddMemberToGroup(c fuego.ContextWithBody[AddMemberRequest
 	h.logger.Debugf("Added member with ID %s to group with ID %s", member.ID, id)
 	return &member, nil
 }
+
+type RemoveMemberRequest struct {
+	MemberID string `json:"member_id" validate:"dive,uuid"`
+}
+
+func (h *GroupHandler) RemoveMembersFromGroup(c fuego.ContextNoBody) (*[]entity.Member, error) {
+	var group entity.Group
+
+	id := c.PathParam("groupId")
+	groupId, err := uuid.Parse(id)
+	if err != nil {
+		h.logger.Errorf("Error parsing group ID %s: %v", id, err)
+		return nil, fuego.BadRequestError{Title: "Invalid group ID", Err: err}
+	}
+
+	memberIdParam := c.PathParam("memberId")
+	memberId, err := uuid.Parse(memberIdParam)
+	if err != nil {
+		h.logger.Errorf("Error parsing member ID %s: %v", memberIdParam, err)
+		return nil, fuego.BadRequestError{Title: "Invalid member ID", Err: err}
+	}
+
+	h.logger.Debugf("Fetching group with ID %s", id)
+	filter := bson.M{"id": groupId}
+	err = h.mongoCollection.First(filter, &group)
+	if err != nil {
+		h.logger.Errorf("Error fetching group with ID %s: %v", id, err)
+		return nil, fuego.NotFoundError{Title: "Group not found", Err: err}
+	}
+
+	var updatedMembers []entity.Member
+	for _, member := range group.Members {
+		if member.ID != memberId {
+			updatedMembers = append(updatedMembers, member)
+		}
+	}
+	group.Members = updatedMembers
+	group.UpdatedAt = time.Now()
+
+	h.logger.Debugf("Updating group with ID %s", id)
+	err = h.mongoCollection.Update(&group)
+	if err != nil {
+		h.logger.Errorf("Error updating group with ID %s: %v", id, err)
+		return nil, fuego.InternalServerError{Title: "Error updating group", Err: err}
+	}
+
+	h.logger.Debugf("Removed member with ID %s from group with ID %s", memberId, id)
+
+	return &group.Members, nil
+}
