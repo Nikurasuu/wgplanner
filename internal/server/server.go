@@ -34,12 +34,12 @@ func (s *Server) Run() error {
 	)
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"https://wgplanner.onrender.com"},
+		AllowedOrigins:   []string{"https://wgplanner.onrender.com", "https://wgplanner.onrender.com/"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "content-type", "Authorization"},
 		AllowCredentials: true,
 	})
-	fuego.Use(srv, c.Handler)
+	fuego.WithGlobalMiddlewares(c.Handler)
 
 	api := fuego.Group(srv, "/api",
 		option.Tags("API"),
