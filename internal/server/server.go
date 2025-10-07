@@ -10,6 +10,7 @@ import (
 	"github.com/go-fuego/fuego"
 	"github.com/go-fuego/fuego/option"
 	"github.com/kamva/mgm/v3"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,6 +32,14 @@ func (s *Server) Run() error {
 	srv := fuego.NewServer(
 		fuego.WithAddr("0.0.0.0:" + strconv.Itoa(s.cfg.Server.Port)),
 	)
+
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"https://wgplanner.onrender.com"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+	fuego.Use(srv, c.Handler)
 
 	api := fuego.Group(srv, "/api",
 		option.Tags("API"),
