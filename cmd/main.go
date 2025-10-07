@@ -1,8 +1,6 @@
 package main
 
 import (
-	"strconv"
-
 	"wgplanner/internal/config"
 	"wgplanner/internal/server"
 
@@ -23,7 +21,7 @@ func main() {
 		logger.SetLevel(logrus.InfoLevel)
 	}
 
-	mgmErr := mgm.SetDefaultConfig(nil, cfg.Mongo.DataBase, options.Client().ApplyURI("mongodb://"+cfg.Mongo.Host+":"+strconv.Itoa(cfg.Mongo.Port)))
+	mgmErr := mgm.SetDefaultConfig(nil, cfg.Mongo.Database, options.Client().ApplyURI(cfg.Mongo.ConnectionString))
 	if mgmErr != nil {
 		logger.Fatalf("Error setting up mgm: %v", mgmErr)
 	}

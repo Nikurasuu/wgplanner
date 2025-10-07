@@ -16,9 +16,8 @@ type Config struct {
 		Port int
 	}
 	Mongo struct {
-		Host     string
-		Port     int
-		DataBase string
+		ConnectionString string
+		Database         string
 	}
 }
 
@@ -37,13 +36,8 @@ func NewConfig() (*Config, error) {
 		}
 	}
 
-	cfg.Mongo.Host = os.Getenv("MONGO_HOST")
-	if mongoPortStr := os.Getenv("MONGO_PORT"); mongoPortStr != "" {
-		if mongoPort, err := strconv.Atoi(mongoPortStr); err == nil {
-			cfg.Mongo.Port = mongoPort
-		}
-	}
-	cfg.Mongo.DataBase = os.Getenv("MONGO_DATABASE")
+	cfg.Mongo.ConnectionString = os.Getenv("MONGO_CONNECTION_STRING")
+	cfg.Mongo.Database = os.Getenv("MONGO_DATABASE")
 
 	return cfg, nil
 }
