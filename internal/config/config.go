@@ -1,7 +1,13 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"os"
+	"strconv"
 
+	"github.com/joho/godotenv"
+)
+
+// Config holds application configuration loaded from environment variables.
 type Config struct {
 	Logger struct {
 		Level string
@@ -16,19 +22,28 @@ type Config struct {
 	}
 }
 
+// NewConfig loads configuration from environment variables and .env file.
 func NewConfig() (*Config, error) {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
-	}
+	// Load .env file if present
+	_ = godotenv.Load()
 
 	cfg := &Config{}
-	if err := viper.Unmarshal(cfg); err != nil {
-		return nil, err
+
+	cfg.Logger.Level = os.Getenv("LOGGER_LEVEL")
+
+	if portStr := os.Getenv("SERVER_PORT"); portStr != "" {
+		if port, err := strconv.Atoi(portStr); err == nil {
+			cfg.Server.Port = port
+		}
 	}
+
+	cfg.Mongo.Host = os.Getenv("MONGO_HOST")
+	if mongoPortStr := os.Getenv("MONGO_PORT"); mongoPortStr != "" {
+		if mongoPort, err := strconv.Atoi(mongoPortStr); err == nil {
+			cfg.Mongo.Port = mongoPort
+		}
+	}
+	cfg.Mongo.DataBase = os.Getenv("MONGO_DATABASE")
 
 	return cfg, nil
 }
