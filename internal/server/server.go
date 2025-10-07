@@ -35,7 +35,7 @@ func (s *Server) Run() error {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"https://wgplanner.onrender.com"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	})
