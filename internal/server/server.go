@@ -29,7 +29,7 @@ func (s *Server) Run() error {
 	s.logger.Infof("Starting server on port %d", s.cfg.Server.Port)
 
 	srv := fuego.NewServer(
-		fuego.WithAddr("localhost:" + strconv.Itoa(s.cfg.Server.Port)),
+		fuego.WithAddr("0.0.0.0:" + strconv.Itoa(s.cfg.Server.Port)),
 	)
 
 	api := fuego.Group(srv, "/api",
