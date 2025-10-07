@@ -29,17 +29,17 @@ func NewServer(cfg *config.Config, logger *logrus.Logger) *Server {
 func (s *Server) Run() error {
 	s.logger.Infof("Starting server on port %d", s.cfg.Server.Port)
 
-	srv := fuego.NewServer(
-		fuego.WithAddr("0.0.0.0:" + strconv.Itoa(s.cfg.Server.Port)),
-	)
-
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"https://wgplanner.onrender.com", "https://wgplanner.onrender.com/"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "content-type", "Authorization"},
 		AllowCredentials: true,
 	})
-	fuego.WithGlobalMiddlewares(c.Handler)
+
+	srv := fuego.NewServer(
+		fuego.WithGlobalMiddlewares(c.Handler),
+		fuego.WithAddr("0.0.0.0:"+strconv.Itoa(s.cfg.Server.Port)),
+	)
 
 	api := fuego.Group(srv, "/api",
 		option.Tags("API"),
