@@ -39,7 +39,7 @@ func (s *Server) Run() error {
 
 	srv := fuego.NewServer(
 		fuego.WithGlobalMiddlewares(c.Handler),
-		fuego.WithAddr("127.0.0.1:"+strconv.Itoa(s.cfg.Server.Port)),
+		fuego.WithAddr("0.0.0.0:"+strconv.Itoa(s.cfg.Server.Port)),
 	)
 
 	api := fuego.Group(srv, "/api",
