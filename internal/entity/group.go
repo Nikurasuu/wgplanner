@@ -4,13 +4,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type Group struct {
-	gorm.Model
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	Name      string    `json:"name"`
+	Members   []Member  `gorm:"foreignKey:GroupID" json:"members"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }

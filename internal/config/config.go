@@ -16,8 +16,11 @@ type Config struct {
 		Port int
 	}
 	Database struct {
-		ConnectionString string
-		Database         string
+		Host     string
+		Port     int
+		User     string
+		Password string
+		Database string
 	}
 }
 
@@ -36,7 +39,14 @@ func NewConfig() (*Config, error) {
 		}
 	}
 
-	cfg.Database.ConnectionString = os.Getenv("POSTGRES_URL")
+	cfg.Database.Host = os.Getenv("POSTGRES_HOST")
+	cfg.Database.User = os.Getenv("POSTGRES_USER")
+	cfg.Database.Password = os.Getenv("POSTGRES_PASSWORD")
+	if portStr := os.Getenv("POSTGRES_PORT"); portStr != "" {
+		if port, err := strconv.Atoi(portStr); err == nil {
+			cfg.Database.Port = port
+		}
+	}
 	cfg.Database.Database = os.Getenv("POSTGRES_DB")
 
 	return cfg, nil

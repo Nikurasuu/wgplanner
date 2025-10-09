@@ -31,7 +31,7 @@ func (s *Server) Run() error {
 	s.logger.Infof("Starting server on port %d", s.cfg.Server.Port)
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"https://wgplanner.niklas-malkusch.de", "https://wgplanner.niklas-malkusch.de/", "http://localhost:5173"},
+		AllowedOrigins:   []string{"https://wgplanner.niklas-malkusch.de", "https://wgplanner.niklas-malkusch.de/", "http://localhost:5173", "http://127.0.0.1:8080"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "content-type", "Authorization"},
 		AllowCredentials: true,
@@ -39,7 +39,7 @@ func (s *Server) Run() error {
 
 	srv := fuego.NewServer(
 		fuego.WithGlobalMiddlewares(c.Handler),
-		fuego.WithAddr("0.0.0.0:"+strconv.Itoa(s.cfg.Server.Port)),
+		fuego.WithAddr("127.0.0.1:"+strconv.Itoa(s.cfg.Server.Port)),
 	)
 
 	api := fuego.Group(srv, "/api",

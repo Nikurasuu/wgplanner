@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"wgplanner/internal/config"
 	"wgplanner/internal/server"
 
@@ -21,7 +23,12 @@ func main() {
 		logger.SetLevel(logrus.InfoLevel)
 	}
 
-	db, err := gorm.Open(postgres.Open(cfg.Database.ConnectionString), &gorm.Config{})
+	dsn := "host=" + cfg.Database.Host +
+		" user=" + cfg.Database.User +
+		" password=" + cfg.Database.Password +
+		" port=" + fmt.Sprint(cfg.Database.Port) +
+		" sslmode=disable TimeZone=UTC"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
