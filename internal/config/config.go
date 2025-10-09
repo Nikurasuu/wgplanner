@@ -15,9 +15,12 @@ type Config struct {
 	Server struct {
 		Port int
 	}
-	Mongo struct {
-		ConnectionString string
-		Database         string
+	Database struct {
+		Host     string
+		Port     int
+		User     string
+		Password string
+		Database string
 	}
 }
 
@@ -36,8 +39,15 @@ func NewConfig() (*Config, error) {
 		}
 	}
 
-	cfg.Mongo.ConnectionString = os.Getenv("MONGO_CONNECTION_STRING")
-	cfg.Mongo.Database = os.Getenv("MONGO_DATABASE")
+	cfg.Database.Host = os.Getenv("POSTGRES_HOST")
+	cfg.Database.User = os.Getenv("POSTGRES_USER")
+	cfg.Database.Password = os.Getenv("POSTGRES_PASSWORD")
+	if portStr := os.Getenv("POSTGRES_PORT"); portStr != "" {
+		if port, err := strconv.Atoi(portStr); err == nil {
+			cfg.Database.Port = port
+		}
+	}
+	cfg.Database.Database = os.Getenv("POSTGRES_DB")
 
 	return cfg, nil
 }

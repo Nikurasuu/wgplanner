@@ -7,24 +7,24 @@ import (
 
 	"github.com/go-fuego/fuego"
 	"github.com/google/uuid"
-	"github.com/kamva/mgm/v3"
 	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson"
+	"gorm.io/gorm"
 )
 
 type GroupHandler struct {
-	logger          *logrus.Logger
-	mongoCollection *mgm.Collection
+	logger *logrus.Logger
+	db     *gorm.DB
 }
 
 type CreateGroupRequest struct {
 	Name string `json:"name" validate:"required"`
 }
 
-func NewGroupHandler(logger *logrus.Logger, mongoCollection *mgm.Collection) *GroupHandler {
+func NewGroupHandler(logger *logrus.Logger, db *gorm.DB) *GroupHandler {
+	db.AutoMigrate(&entity.Group{}, &entity.Member{})
 	return &GroupHandler{
-		logger:          logger,
-		mongoCollection: mongoCollection,
+		logger: logger,
+		db:     db,
 	}
 }
 
@@ -42,8 +42,7 @@ func (h *GroupHandler) CreateGroup(c fuego.ContextWithBody[CreateGroupRequest]) 
 	group.UpdatedAt = time.Now()
 
 	h.logger.Debugf("Creating group with ID %s", group.ID)
-	err = h.mongoCollection.Create(&group)
-	if err != nil {
+	if err := h.db.Create(&group).Error; err != nil {
 		h.logger.Errorf("Error creating group: %v", err)
 		return nil, fuego.InternalServerError{Title: "Error creating group", Err: err}
 	}
@@ -63,9 +62,7 @@ func (h *GroupHandler) GetGroupFromID(c fuego.ContextNoBody) (*entity.Group, err
 	}
 
 	h.logger.Debugf("Fetching group with ID %s", id)
-	filter := bson.M{"id": uuid}
-	err = h.mongoCollection.First(filter, &group)
-	if err != nil {
+	if err := h.db.Preload("Members").First(&group, "id = ?", uuid).Error; err != nil {
 		h.logger.Errorf("Error fetching group with ID %s: %v", id, err)
 		return nil, fuego.NotFoundError{Title: "Group not found", Err: err}
 	}
@@ -88,47 +85,43 @@ func (h *GroupHandler) AddMemberToGroup(c fuego.ContextWithBody[AddMemberRequest
 		return nil, fuego.BadRequestError{Title: "Invalid group ID", Err: err}
 	}
 
-	h.logger.Debugf("Fetching group with ID %s", id)
-	filter := bson.M{"id": groupId}
-	err = h.mongoCollection.First(filter, &group)
-	if err != nil {
-		h.logger.Errorf("Error fetching group with ID %s: %v", id, err)
-		return nil, fuego.NotFoundError{Title: "Group not found", Err: err}
-	}
-
 	body, err := c.Body()
 	if err != nil {
 		h.logger.Errorf("Error parsing request body: %v", err)
 		return nil, fuego.BadRequestError{Title: "Invalid request body", Err: err}
 	}
 
-	var member entity.Member
-	member.ID = uuid.New()
-	member.Name = body.Name
-	member.CreatedAt = time.Now()
-	member.UpdatedAt = time.Now()
-
-	group.Members = append(group.Members, member)
-	group.UpdatedAt = time.Now()
-
-	h.logger.Debugf("Updating group with ID %s", id)
-	err = h.mongoCollection.Update(&group)
-	if err != nil {
-		h.logger.Errorf("Error updating group with ID %s: %v", id, err)
-		return nil, fuego.InternalServerError{Title: "Error updating group", Err: err}
+	if err := h.db.First(&group, "id = ?", groupId).Error; err != nil {
+		h.logger.Errorf("Error fetching group with ID %s: %v", id, err)
+		return nil, fuego.NotFoundError{Title: "Group not found", Err: err}
 	}
 
-	h.logger.Debugf("Added member with ID %s to group with ID %s", member.ID, id)
-	return &member, nil
+	newMember := entity.Member{
+		ID:        uuid.New(),
+		Name:      body.Name,
+		GroupID:   groupId,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := h.db.Create(&newMember).Error; err != nil {
+		h.logger.Errorf("Error creating member for group %s: %v", id, err)
+		return nil, fuego.InternalServerError{Title: "Error adding member", Err: err}
+	}
+
+	h.logger.Debugf("Added member with ID %s to group with ID %s", newMember.ID, id)
+	return &newMember, nil
 }
 
 type RemoveMemberRequest struct {
 	MemberID string `json:"member_id" validate:"dive,uuid"`
 }
 
-func (h *GroupHandler) RemoveMembersFromGroup(c fuego.ContextNoBody) (*[]entity.Member, error) {
-	var group entity.Group
+type RemoveMemberResponse struct {
+	Message string `json:"message"`
+}
 
+func (h *GroupHandler) RemoveMembersFromGroup(c fuego.ContextNoBody) (*RemoveMemberResponse, error) {
 	id := c.PathParam("groupId")
 	groupId, err := uuid.Parse(id)
 	if err != nil {
@@ -136,38 +129,32 @@ func (h *GroupHandler) RemoveMembersFromGroup(c fuego.ContextNoBody) (*[]entity.
 		return nil, fuego.BadRequestError{Title: "Invalid group ID", Err: err}
 	}
 
-	memberIdParam := c.PathParam("memberId")
-	memberId, err := uuid.Parse(memberIdParam)
-	if err != nil {
-		h.logger.Errorf("Error parsing member ID %s: %v", memberIdParam, err)
-		return nil, fuego.BadRequestError{Title: "Invalid member ID", Err: err}
-	}
-
-	h.logger.Debugf("Fetching group with ID %s", id)
-	filter := bson.M{"id": groupId}
-	err = h.mongoCollection.First(filter, &group)
-	if err != nil {
+	if err := h.db.First(&entity.Group{}, "id = ?", groupId).Error; err != nil {
 		h.logger.Errorf("Error fetching group with ID %s: %v", id, err)
 		return nil, fuego.NotFoundError{Title: "Group not found", Err: err}
 	}
 
-	var updatedMembers []entity.Member
-	for _, member := range group.Members {
-		if member.ID != memberId {
-			updatedMembers = append(updatedMembers, member)
-		}
-	}
-	group.Members = updatedMembers
-	group.UpdatedAt = time.Now()
-
-	h.logger.Debugf("Updating group with ID %s", id)
-	err = h.mongoCollection.Update(&group)
+	memberIDParam := c.PathParam("memberId")
+	memberID, err := uuid.Parse(memberIDParam)
 	if err != nil {
-		h.logger.Errorf("Error updating group with ID %s: %v", id, err)
-		return nil, fuego.InternalServerError{Title: "Error updating group", Err: err}
+		h.logger.Errorf("Error parsing member ID %s: %v", memberIDParam, err)
+		return nil, fuego.BadRequestError{Title: "Invalid member ID", Err: err}
 	}
 
-	h.logger.Debugf("Removed member with ID %s from group with ID %s", memberId, id)
+	var member entity.Member
+	if err := h.db.First(&member, "id = ? AND group_id = ?", memberID, groupId).Error; err != nil {
+		h.logger.Errorf("Error fetching member with ID %s in group %s: %v", memberID, id, err)
+		return nil, fuego.NotFoundError{Title: "Member not found in group", Err: err}
+	}
 
-	return &group.Members, nil
+	if err := h.db.Delete(&member).Error; err != nil {
+		h.logger.Errorf("Error removing member with ID %s from group %s: %v", memberID, id, err)
+		return nil, fuego.InternalServerError{Title: "Error removing member", Err: err}
+	}
+
+	response := &RemoveMemberResponse{
+		Message: "Member removed successfully",
+	}
+	h.logger.Debugf("Removed member with ID %s from group with ID %s", memberID, id)
+	return response, nil
 }

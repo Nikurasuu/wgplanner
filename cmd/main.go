@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
+
 	"wgplanner/internal/config"
 	"wgplanner/internal/server"
 
-	"github.com/kamva/mgm/v3"
 	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -21,11 +23,16 @@ func main() {
 		logger.SetLevel(logrus.InfoLevel)
 	}
 
-	mgmErr := mgm.SetDefaultConfig(nil, cfg.Mongo.Database, options.Client().ApplyURI(cfg.Mongo.ConnectionString))
-	if mgmErr != nil {
-		logger.Fatalf("Error setting up mgm: %v", mgmErr)
+	dsn := "host=" + cfg.Database.Host +
+		" user=" + cfg.Database.User +
+		" password=" + cfg.Database.Password +
+		" port=" + fmt.Sprint(cfg.Database.Port) +
+		" sslmode=disable TimeZone=UTC"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
 	}
 
-	server := server.NewServer(cfg, logger)
+	server := server.NewServer(cfg, logger, db)
 	server.Run()
 }
