@@ -15,7 +15,7 @@ type Config struct {
 	Server struct {
 		Port int
 	}
-	Mongo struct {
+	Database struct {
 		ConnectionString string
 		Database         string
 	}
@@ -36,8 +36,8 @@ func NewConfig() (*Config, error) {
 		}
 	}
 
-	cfg.Mongo.ConnectionString = os.Getenv("MONGO_CONNECTION_STRING")
-	cfg.Mongo.Database = os.Getenv("MONGO_DATABASE")
+	cfg.Database.ConnectionString = os.Getenv("POSTGRES_URL")
+	cfg.Database.Database = os.Getenv("POSTGRES_DB")
 
 	return cfg, nil
 }

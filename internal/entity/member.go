@@ -1,12 +1,17 @@
 package entity
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/kamva/mgm/v3"
+	"gorm.io/gorm"
 )
 
 type Member struct {
-	mgm.DefaultModel `bson:",inline"`
-	ID               uuid.UUID `json:"id" bson:"id"`
-	Name             string    `json:"name" bson:"name"`
+	gorm.Model
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Name      string
+	GroupID   uuid.UUID `gorm:"type:uuid;index"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

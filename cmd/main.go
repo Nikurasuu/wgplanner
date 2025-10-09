@@ -4,9 +4,9 @@ import (
 	"wgplanner/internal/config"
 	"wgplanner/internal/server"
 
-	"github.com/kamva/mgm/v3"
 	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -21,11 +21,11 @@ func main() {
 		logger.SetLevel(logrus.InfoLevel)
 	}
 
-	mgmErr := mgm.SetDefaultConfig(nil, cfg.Mongo.Database, options.Client().ApplyURI(cfg.Mongo.ConnectionString))
-	if mgmErr != nil {
-		logger.Fatalf("Error setting up mgm: %v", mgmErr)
+	db, err := gorm.Open(postgres.Open(cfg.Database.ConnectionString), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
 	}
 
-	server := server.NewServer(cfg, logger)
+	server := server.NewServer(cfg, logger, db)
 	server.Run()
 }
