@@ -13,6 +13,7 @@ type Config struct {
 		Level string
 	}
 	Server struct {
+		Host string
 		Port int
 	}
 	Database struct {
@@ -32,6 +33,8 @@ func NewConfig() (*Config, error) {
 	cfg := &Config{}
 
 	cfg.Logger.Level = os.Getenv("LOGGER_LEVEL")
+
+	cfg.Server.Host = os.Getenv("SERVER_HOST")
 
 	if portStr := os.Getenv("SERVER_PORT"); portStr != "" {
 		if port, err := strconv.Atoi(portStr); err == nil {

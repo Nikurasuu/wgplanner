@@ -113,15 +113,54 @@ func (h *GroupHandler) AddMemberToGroup(c fuego.ContextWithBody[AddMemberRequest
 	return &newMember, nil
 }
 
-type RemoveMemberRequest struct {
-	MemberID string `json:"member_id" validate:"dive,uuid"`
+type RenameMemberRequest struct {
+	Name string `json:"name" validate:"required"`
+}
+
+func (h *GroupHandler) RenameMemberInGroup(c fuego.ContextWithBody[RenameMemberRequest]) (*entity.Member, error) {
+	id := c.PathParam("groupId")
+	groupId, err := uuid.Parse(id)
+	if err != nil {
+		h.logger.Errorf("Error parsing group ID %s: %v", id, err)
+		return nil, fuego.BadRequestError{Title: "Invalid group ID", Err: err}
+	}
+
+	memberIDParam := c.PathParam("memberId")
+	memberID, err := uuid.Parse(memberIDParam)
+	if err != nil {
+		h.logger.Errorf("Error parsing member ID %s: %v", memberIDParam, err)
+		return nil, fuego.BadRequestError{Title: "Invalid member ID", Err: err}
+	}
+
+	body, err := c.Body()
+	if err != nil {
+		h.logger.Errorf("Error parsing request body: %v", err)
+		return nil, fuego.BadRequestError{Title: "Invalid request body", Err: err}
+	}
+
+	var member entity.Member
+	if err := h.db.First(&member, "id = ? AND group_id = ?", memberID, groupId).Error; err != nil {
+		h.logger.Errorf("Error fetching member with ID %s in group %s: %v", memberID, id, err)
+		return nil, fuego.NotFoundError{Title: "Member not found in group", Err: err}
+	}
+
+	member.Name = body.Name
+	member.UpdatedAt = time.Now()
+
+	if err := h.db.Save(&member).Error; err != nil {
+		h.logger.Errorf("Error renaming member with ID %s in group %s: %v", memberID, id, err)
+		return nil, fuego.InternalServerError{Title: "Error renaming member", Err: err}
+	}
+
+	h.logger.Debugf("Renamed member with ID %s in group with ID %s", memberID, id)
+	return &member, nil
 }
 
 type RemoveMemberResponse struct {
 	Message string `json:"message"`
 }
 
-func (h *GroupHandler) RemoveMembersFromGroup(c fuego.ContextNoBody) (*RemoveMemberResponse, error) {
+func (h *GroupHandler) RemoveMemberFromGroup(c fuego.ContextNoBody) (*RemoveMemberResponse, error) {
 	id := c.PathParam("groupId")
 	groupId, err := uuid.Parse(id)
 	if err != nil {
