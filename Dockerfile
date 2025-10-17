@@ -2,7 +2,7 @@ FROM golang:1.25 AS build
 WORKDIR /app
 COPY . .
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN go build -o /server ./cmd
+RUN env GOOS=linux GOARCH=arm go build -o /server ./cmd
 
 FROM scratch
 COPY --from=build /server /server
